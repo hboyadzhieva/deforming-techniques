@@ -53,7 +53,7 @@ class Point3D:
     def z(self):
         return self._z
 
-    @x.setter
+    @z.setter
     def z(self, z):
         self._z = z
 

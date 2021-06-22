@@ -69,9 +69,9 @@ class ModelPoint3D(Point3D):
         self._t = t
 
     @property
-    def h(self):
-        return self._h
+    def u(self):
+        return self._u
 
-    @h.setter
-    def h(self, h):
-        self._h = h
+    @u.setter
+    def u(self, u):
+        self._u = u

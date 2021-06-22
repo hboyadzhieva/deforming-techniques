@@ -43,7 +43,7 @@ class Model3D:
         for point in pts:
             if not isinstance(point, Point3D):
                 raise TypeError("Expected: %s, received: %s", Point3D.__name__, type(point).__name__)
-            modelPoint = ModelPoint2D(point.x, point.y)
+            modelPoint = ModelPoint3D(point.x, point.y, point.z)
             self._vertices.append(modelPoint)
         self._min_x = min(list(map(lambda p: p.x, self._vertices)))
         self._min_y = min(list(map(lambda p: p.y, self._vertices)))
