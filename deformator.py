@@ -1,6 +1,7 @@
 import math
 from abc import ABC, abstractmethod
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 import calculation as calc
@@ -12,6 +13,28 @@ from point import Point2D, Point3D
 class Deformator(ABC):
     def start(self):
         pass
+
+
+def xs_ys_from_vertex_list(vertex_list):
+    """
+    :param vertex_list: List of Point2D instances
+    :return: 2 arguments
+     first: list of x coordinates of the points
+     second: list of y coordinates of the points
+    """
+    return list(map(lambda p: p.x, vertex_list)), list(map(lambda p: p.y, vertex_list))
+
+
+def xs_ys_zs_from_vertex_list(vertex_list):
+    """
+    :param vertex_list: List of Point3D instances
+    :return: 3 arguments
+     first: numpy array of x coordinates of the points
+     second: numpy array of y coordinates of the points
+     third: numpy array of z coordinates of the points
+    """
+    return np.array(list(map(lambda p: p.x, vertex_list))), np.array(list(map(lambda p: p.y, vertex_list))), np.array(
+        list(map(lambda p: p.z, vertex_list)))
 
 
 class GridDeformator2D(Deformator):
@@ -50,8 +73,32 @@ class GridDeformator2D(Deformator):
                     self._grid.control_points[right][up].y - self._grid.control_points[right][up - 1].y)
 
     def start(self):
-
         print("Started 2D Grid Deformator")
+        ax = plt.subplot()
+        self.plot_grid(ax)
+        plt.show()
+
+    def plot_grid(self, ax):
+        """
+        Plot grid for 2D Grid Deformation
+        Plot lines along x-axis with control points
+        Plot lines along y-axis with control points
+        """
+        for j in range(0, self._grid.count_y_points):
+            x_axis_line = []
+            for i in range(0, self._grid.count_x_points):
+                x_axis_line.append(self._grid.control_points[i][j])
+            xs, ys = xs_ys_from_vertex_list(x_axis_line)
+            ax.plot(xs, ys, 'k.-')
+            x_axis_line.clear()
+
+        for i in range(0, self._grid.count_x_points):
+            y_axis_line = []
+            for j in range(0, self._grid.count_y_points):
+                y_axis_line.append(self._grid.control_points[i][j])
+            xs, ys = xs_ys_from_vertex_list(y_axis_line)
+            ax.plot(xs, ys, 'k.-')
+            y_axis_line.clear()
 
 
 class FreeFormDeformator(Deformator):
@@ -79,3 +126,44 @@ class FreeFormDeformator(Deformator):
                                                        pp0, self._grid.T.to_numpy_array())
             model_point.u = calc.trilinear_interpolant(self._grid.S.to_numpy_array(), self._grid.T.to_numpy_array(),
                                                        pp0, self._grid.U.to_numpy_array())
+
+    def start(self):
+        print("Started Free-Form Deformator")
+        ax = plt.subplot(projection="3d")
+        self.plot_grid(ax)
+        plt.show()
+
+    def plot_grid(self, ax):
+        """
+        Plot grid for Free-Form Deformation
+        Plot lines along x-axis with control points
+        Plot lines along y-axis with control points
+        Plot lines along z-axis with control points
+        """
+
+        for j in range(0, self._grid.count_y_points):
+            for k in range(0, self._grid.count_z_points):
+                x_axis_line = []
+                for i in range(0, self._grid.count_x_points):
+                    x_axis_line.append(self._grid.control_points[i][j][k])
+                xs, ys, zs = xs_ys_zs_from_vertex_list(x_axis_line)
+                ax.plot(xs, ys, zs, 'k.-')
+                x_axis_line.clear()
+
+        for i in range(0, self._grid.count_x_points):
+            for k in range(0, self._grid.count_z_points):
+                y_axis_line = []
+                for j in range(0, self._grid.count_y_points):
+                    y_axis_line.append(self._grid.control_points[i][j][k])
+                xs, ys, zs = xs_ys_zs_from_vertex_list(y_axis_line)
+                ax.plot(xs, ys, zs, 'k.-')
+                y_axis_line.clear()
+
+        for i in range(0, self._grid.count_x_points):
+            for j in range(0, self._grid.count_y_points):
+                z_axis_line = []
+                for k in range(0, self._grid.count_z_points):
+                    z_axis_line.append((self._grid.control_points[i][j][k]))
+                xs, ys, zs = xs_ys_zs_from_vertex_list(z_axis_line)
+                ax.plot(xs, ys, zs, 'k.-')
+                z_axis_line.clear()

@@ -9,13 +9,12 @@ ax = None
 
 def main():
     test_model = Model2D(Point2D(2.5, 4))
-    print(test_model)
     test_deformator = GridDeformator2D(test_model, 5, 5)
-    print(test_deformator)
+    test_deformator.start()
 
     test_model_3d = Model3D(Point3D(1.5, 0, 2.5), Point3D(0, 1.5, 1.5))
     test_deformator_3d = FreeFormDeformator(test_model_3d)
-    print(test_deformator_3d)
+    test_deformator_3d.start()
     # fig = plt.figure(figsize=(4, 4))
     # global ax
     # ax = fig.add_subplot(111, projection='3d')
