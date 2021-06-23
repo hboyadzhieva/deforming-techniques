@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-
 from deformator import GridDeformator2D, FreeFormDeformator
 from model import Model2D, Model3D
 from point import Point2D, Point3D
@@ -12,20 +10,14 @@ def main():
     test_deformator = GridDeformator2D(test_model, 5, 5)
     test_deformator.start()
 
-    test_model_3d = Model3D(Point3D(1.5, 0, 2.5), Point3D(0, 1.5, 1.5))
+    test_model_3d = Model3D(Point3D(1, 0, 2), Point3D(3, 2, 5))
     test_deformator_3d = FreeFormDeformator(test_model_3d)
     test_deformator_3d.start()
-    # fig = plt.figure(figsize=(4, 4))
-    # global ax
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(2, 3, 4)
-    # fig.canvas.callbacks.connect('button_press_event', onmousedown)
-    # plt.show()
 
 
 def onmousedown(event):
     global ax
-    result = ax.format_coord(event.xdata, event.ydata);
+    result = ax.format_coord(event.xdata, event.ydata)
     result.split(',')
     print(result)
 

@@ -1,9 +1,8 @@
+import math
+
 from point import Point2D, Point3D
 
 
-# initialize model with Point3D, from the model initialize the grid - hava a method inside model that creates a grid
-# with l,m,n control points, and from the model initialize the model points with correct s,t,h,v,s,t,u parametrs,
-# let the deformator create grid & modelpoint only through the model.
 class ModelPoint2D(Point2D):
     def __init__(self, x, y):
         super(ModelPoint2D, self).__init__(x, y)
@@ -43,6 +42,22 @@ class ModelPoint2D(Point2D):
     @v.setter
     def v(self, v):
         self._v = v
+
+    def right(self):
+        if self.s is not None:
+            return math.ceil(self.s)
+
+    def left(self):
+        if self.s is not None:
+            return math.ceil(self.s) - 1
+
+    def top(self):
+        if self.t is not None:
+            return math.ceil(self.t)
+
+    def bottom(self):
+        if self.t is not None:
+            return math.ceil(self.t) - 1
 
 
 class ModelPoint3D(Point3D):

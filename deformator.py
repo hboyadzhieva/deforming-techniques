@@ -14,24 +14,55 @@ class Deformator(ABC):
     def start(self):
         pass
 
+    def register_mouse_events(self, fig):
+        fig.canvas.mpl_connect('button_press_event', self.on_mouse_down)
+        fig.canvas.mpl_connect('button_release_event', self.on_mouse_up)
+        fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+
+    def on_mouse_down(self):
+        pass
+
+    def on_mouse_up(self):
+        pass
+
+    def on_mouse_move(self):
+        pass
+
 
 def xs_ys_from_vertex_list(vertex_list):
-    """
-    :param vertex_list: List of Point2D instances
-    :return: 2 arguments
-     first: list of x coordinates of the points
-     second: list of y coordinates of the points
+    """ Return lists of coordinate values from a given vertex list
+
+    Parameters
+    ----------
+    vertex_list: list
+        list of Point2D instances
+
+    Returns
+    --------
+    list:
+       list of x coordinates of the points
+    list:
+       list of y coordinates of the points
     """
     return list(map(lambda p: p.x, vertex_list)), list(map(lambda p: p.y, vertex_list))
 
 
 def xs_ys_zs_from_vertex_list(vertex_list):
-    """
-    :param vertex_list: List of Point3D instances
-    :return: 3 arguments
-     first: numpy array of x coordinates of the points
-     second: numpy array of y coordinates of the points
-     third: numpy array of z coordinates of the points
+    """ Return lists of coordinate values from a given vertex list
+
+    Parameters
+    ----------
+    vertex_list: list
+        list of Point3D instances
+
+    Returns
+    --------
+    list:
+       list of x coordinates of the points
+    list:
+       list of y coordinates of the points
+    list:
+       list of y coordinates of the points
     """
     return np.array(list(map(lambda p: p.x, vertex_list))), np.array(list(map(lambda p: p.y, vertex_list))), np.array(
         list(map(lambda p: p.z, vertex_list)))
@@ -65,17 +96,20 @@ class GridDeformator2D(Deformator):
 
             # calculate bilinear interpolants of the point relevant to the
             # 4 control points that define the cell in which the vertex is positioned
-            right = math.ceil(model_point.s)
-            up = math.ceil(model_point.t)
-            model_point.h = (model_point.x - self._grid.control_points[right - 1][up - 1].x) / (
-                    self._grid.control_points[right][up - 1].x - self._grid.control_points[right - 1][up - 1].x)
-            model_point.v = (model_point.y - self._grid.control_points[right][up - 1].y) / (
-                    self._grid.control_points[right][up].y - self._grid.control_points[right][up - 1].y)
+            l = model_point.left()
+            r = model_point.right()
+            t = model_point.top()
+            b = model_point.bottom()
+            model_point.h = (model_point.x - self._grid.control_points[l][b].x) / (
+                    self._grid.control_points[r][b].x - self._grid.control_points[l][b].x)
+            model_point.v = (model_point.y - self._grid.control_points[r][b].y) / (
+                    self._grid.control_points[r][t].y - self._grid.control_points[r][b].y)
 
     def start(self):
         print("Started 2D Grid Deformator")
         ax = plt.subplot()
         self.plot_grid(ax)
+        self.plot_model(ax)
         plt.show()
 
     def plot_grid(self, ax):
@@ -99,6 +133,29 @@ class GridDeformator2D(Deformator):
             xs, ys = xs_ys_from_vertex_list(y_axis_line)
             ax.plot(xs, ys, 'k.-')
             y_axis_line.clear()
+
+    def plot_model(self, ax):
+        """Plot model with vertices positions according to 2D Grid Deformation of the Grid
+
+        Parameters
+        ---------
+        ax: Axes to plot on
+        """
+        for model_point in self._model.vertices:
+            l = model_point.left()
+            r = model_point.right()
+            t = model_point.top()
+            b = model_point.bottom()
+            new_vertex = calc.bilinear_interpolation(self._grid.control_points[l][b].to_numpy_array(),
+                                                     self._grid.control_points[r][b].to_numpy_array(),
+                                                     self._grid.control_points[r][t].to_numpy_array(),
+                                                     self._grid.control_points[l][t].to_numpy_array(),
+                                                     model_point.h, model_point.v)
+            model_point.x = new_vertex[0]
+            model_point.v = new_vertex[1]
+
+        xs, ys = xs_ys_from_vertex_list(self._model.vertices)
+        ax.plot(xs, ys, 'go')
 
 
 class FreeFormDeformator(Deformator):
@@ -131,6 +188,7 @@ class FreeFormDeformator(Deformator):
         print("Started Free-Form Deformator")
         ax = plt.subplot(projection="3d")
         self.plot_grid(ax)
+        self.plot_model(ax)
         plt.show()
 
     def plot_grid(self, ax):
@@ -167,3 +225,12 @@ class FreeFormDeformator(Deformator):
                 xs, ys, zs = xs_ys_zs_from_vertex_list(z_axis_line)
                 ax.plot(xs, ys, zs, 'k.-')
                 z_axis_line.clear()
+
+    def plot_model(self, ax):
+        for model_point in self._model.vertices:
+            new_vertex = calc.bezier_volume(self._grid, model_point.s, model_point.t, model_point.u)
+            model_point.x = new_vertex[0]
+            model_point.y = new_vertex[1]
+            model_point.z = new_vertex[2]
+        xs, ys, zs = xs_ys_zs_from_vertex_list(self._model.vertices)
+        ax.plot(xs, ys, zs, 'go')
