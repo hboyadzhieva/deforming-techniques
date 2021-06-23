@@ -64,7 +64,7 @@ class ControlGrid2D:
     def flat_control_points(self):
         result = []
         for i in self._control_points:
-            for j in self._control_points[i]:
+            for j in i:
                 result.append(j)
         return result
 

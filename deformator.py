@@ -17,16 +17,28 @@ class Deformator(ABC):
     def register_mouse_events(self, fig):
         fig.canvas.mpl_connect('button_press_event', self.on_mouse_down)
         fig.canvas.mpl_connect('button_release_event', self.on_mouse_up)
-        fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+        fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_motion)
 
-    def on_mouse_down(self):
+    def on_mouse_down(self, event):
         pass
 
-    def on_mouse_up(self):
+    def on_mouse_up(self, event):
         pass
 
-    def on_mouse_move(self):
+    def on_mouse_motion(self, event):
         pass
+
+    def plot_grid(self):
+        pass
+
+    def plot_model(self):
+        pass
+
+    def plot(self):
+        plt.cla()
+        self.plot_grid()
+        self.plot_model()
+        plt.show()
 
 
 def xs_ys_from_vertex_list(vertex_list):
@@ -70,16 +82,22 @@ def xs_ys_zs_from_vertex_list(vertex_list):
 
 class GridDeformator2D(Deformator):
 
-    def __init__(self, model, control_points_x=4, control_points_y=4, offset=2):
+    def __init__(self, model, control_points_x=4, control_points_y=4, offset_grid_model=2, offset_mouse_touch=0.2):
         if not isinstance(model, Model2D):
             raise TypeError("Type error. Expected: %s, received: %s", Model2D.__name__, type(model).__name__)
         self._model = model
 
+        # Interactor settings
+        self.ax = None
+        self.fig = None
+        self._offset_mouse_touch = offset_mouse_touch
+        self._vertex_on_move = None
+
         # Choose center, S and T vectors so that the grid covers completely the model and leaves a margin of "offset"
         # units around the model. Initialize control grid with given number of control points per direction.
-        center = Point2D(self._model.min_x - offset, self._model.min_y - offset)
-        S = Point2D(self._model.max_x - center.x + offset, 0)
-        T = Point2D(0, self._model.max_y - center.y + offset)
+        center = Point2D(self._model.min_x - offset_grid_model, self._model.min_y - offset_grid_model)
+        S = Point2D(self._model.max_x - center.x + offset_grid_model, 0)
+        T = Point2D(0, self._model.max_y - center.y + offset_grid_model)
         self._grid = ControlGrid2D(control_points_x, control_points_y, center, S, T)
 
         self.setup_model_grid_params()
@@ -107,12 +125,11 @@ class GridDeformator2D(Deformator):
 
     def start(self):
         print("Started 2D Grid Deformator")
-        ax = plt.subplot()
-        self.plot_grid(ax)
-        self.plot_model(ax)
-        plt.show()
+        self.fig, self.ax = plt.subplots()
+        self.register_mouse_events(self.fig)
+        self.plot()
 
-    def plot_grid(self, ax):
+    def plot_grid(self):
         """
         Plot grid for 2D Grid Deformation
         Plot lines along x-axis with control points
@@ -123,7 +140,7 @@ class GridDeformator2D(Deformator):
             for i in range(0, self._grid.count_x_points):
                 x_axis_line.append(self._grid.control_points[i][j])
             xs, ys = xs_ys_from_vertex_list(x_axis_line)
-            ax.plot(xs, ys, 'k.-')
+            self.ax.plot(xs, ys, 'k.-')
             x_axis_line.clear()
 
         for i in range(0, self._grid.count_x_points):
@@ -131,10 +148,10 @@ class GridDeformator2D(Deformator):
             for j in range(0, self._grid.count_y_points):
                 y_axis_line.append(self._grid.control_points[i][j])
             xs, ys = xs_ys_from_vertex_list(y_axis_line)
-            ax.plot(xs, ys, 'k.-')
+            self.ax.plot(xs, ys, 'k.-')
             y_axis_line.clear()
 
-    def plot_model(self, ax):
+    def plot_model(self):
         """Plot model with vertices positions according to 2D Grid Deformation of the Grid
 
         Parameters
@@ -152,10 +169,32 @@ class GridDeformator2D(Deformator):
                                                      self._grid.control_points[l][t].to_numpy_array(),
                                                      model_point.h, model_point.v)
             model_point.x = new_vertex[0]
-            model_point.v = new_vertex[1]
+            model_point.y = new_vertex[1]
 
         xs, ys = xs_ys_from_vertex_list(self._model.vertices)
-        ax.plot(xs, ys, 'go')
+        self.ax.plot(xs, ys, 'go')
+
+    def on_mouse_down(self, event):
+        x = event.xdata
+        y = event.ydata
+        point_clicked = Point2D(x, y)
+        for control_point in self._grid.flat_control_points():
+            if calc.distance_2d(point_clicked, control_point) < self._offset_mouse_touch:
+                print("clicked")
+                self._vertex_on_move = control_point
+                break
+
+    def on_mouse_motion(self, event):
+        if self._vertex_on_move is not None:
+            x = event.xdata
+            y = event.ydata
+            self._vertex_on_move.x = x
+            self._vertex_on_move.y = y
+            self.plot()
+
+    def on_mouse_up(self, event):
+        if self._vertex_on_move is not None:
+            self._vertex_on_move = None
 
 
 class FreeFormDeformator(Deformator):
