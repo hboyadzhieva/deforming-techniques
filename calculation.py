@@ -19,6 +19,22 @@ def distance_2d(vector1, vector2):
     return math.sqrt((vector2.x - vector1.x) ** 2 + (vector2.y - vector1.y) ** 2)
 
 
+def distance_3d(vector1, vector2):
+    """Calculate the distance between 2 points in 3D
+
+    Parameters:
+    -----------
+    vector1: Point3D
+    vector2: Point3D
+
+    Returns:
+    ---------
+    float:
+        number representing the distance between the points
+    """
+    return math.sqrt((vector2.x - vector1.x) ** 2 + (vector2.y - vector1.y) ** 2 + (vector2.z - vector1.z) ** 2)
+
+
 def vector_projection(vector, base_vector):
     """Calculate the projection of vector on base_vector
 

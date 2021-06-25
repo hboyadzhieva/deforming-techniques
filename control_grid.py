@@ -148,7 +148,7 @@ class ControlGrid3D:
     def flat_control_points(self):
         result = []
         for i in self._control_points:
-            for j in self._control_points[i]:
-                for k in self._control_points[j]:
+            for j in i:
+                for k in j:
                     result.append(k)
         return result

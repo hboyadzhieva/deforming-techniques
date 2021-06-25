@@ -27,6 +27,7 @@ class Point2D:
     def to_numpy_array(self):
         return numpy.array([self.x, self.y])
 
+
 class Point3D:
     def __init__(self, x, y, z):
         self._x = x
