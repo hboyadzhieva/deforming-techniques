@@ -1,9 +1,8 @@
-import re
-from abc import ABC, abstractmethod
+from abc import ABC
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits import mplot3d
+from mpl_toolkits.mplot3d import art3d
 from mpl_toolkits.mplot3d import proj3d
 
 import calculation as calc
@@ -205,7 +204,7 @@ class GridDeformator2D(Deformator):
             self._vertex_on_move = None
 
 
-def format_coord(xd, yd, p0, p1, ax):
+def coords_from_click_on_line(xd, yd, p0, p1, ax):
     """
     Given the 2D view coordinates attempt to guess a 3D coordinate.
     Use method from axes3d but pass specific vertices for the edge.
@@ -238,8 +237,9 @@ class FreeFormDeformator(Deformator):
         # Setup Interactor parameters
         self.ax = None
         self.offset_mouse_event = offset_mouse_event
-        self._vertex_on_move = None
+        self._vertex_selected = None
         self._line_picked = None
+        self._arrow_picked = None
 
         # Choose center, S,T,U vectors so that the grid covers completely the model and leaves a margin of "offset"
         # units around the model. Initialize control grid with given number of control points per direction.
@@ -266,8 +266,17 @@ class FreeFormDeformator(Deformator):
         print("Started Free-Form Deformator")
         self.fig = plt.figure()
         self.ax = plt.subplot(projection="3d")
+        self.ax.mouse_init(rotate_btn=3)
         self.register_mouse_events(self.fig)
         self.plot()
+
+    def plot(self):
+        plt.cla()
+        self.plot_grid()
+        self.plot_model()
+        if self._vertex_selected is not None:
+            self.add_arrows()
+        plt.show()
 
     def plot_grid(self):
         """
@@ -314,28 +323,63 @@ class FreeFormDeformator(Deformator):
         self.ax.plot(xs, ys, zs, 'go', picker=5)
 
     def on_mouse_down(self, event):
-        if self._line_picked is not None:
+        # after moving the arrows, user clicks on another point from the canvas
+        if self._arrow_picked is None and self._vertex_selected is not None:
+            self._vertex_selected = None
+            self._arrow_picked = None
+            self._line_picked = None
+            self.plot()
+        if self._line_picked is not None and self._vertex_selected is None:
             xclick, yclick = event.xdata, event.ydata
-            pick_xs = self._line_picked.get_data_3d()[0]
-            pick_ys = self._line_picked.get_data_3d()[1]
-            pick_zs = self._line_picked.get_data_3d()[2]
-            p0 = np.array([pick_xs[0], pick_ys[0], pick_zs[0]])
-            p1 = np.array([pick_xs[1], pick_ys[1], pick_zs[1]])
+            p0, p1 = np.transpose(self._line_picked.get_data_3d())[0], np.transpose(self._line_picked.get_data_3d())[1]
             pp0, pp1 = proj3d.proj_points((p0, p1), self.ax.M)
-            xm, ym, zm = format_coord(xclick, yclick, pp0, pp1, self.ax)
-            print("mouse on line click (%s, %s, %s)" % (xm, ym, zm))
-            str = self.ax.format_coord(xclick, yclick)
+            xm, ym, zm = coords_from_click_on_line(xclick, yclick, pp0, pp1, self.ax)
+            point_clicked = Point3D(xm, ym, zm)
+            for control_point in self._grid.flat_control_points():
+                if calc.distance_3d(point_clicked, control_point) < self.offset_mouse_event:
+                    self._vertex_selected = control_point
+                    self.add_arrows()
+                    break
 
     def on_mouse_motion(self, event):
-        pass
+        if self._arrow_picked is not None and self._vertex_selected is not None:
+            if self._arrow_picked == self.x_arrow:
+                self._vertex_selected.x += 0.2
+            if self._arrow_picked == self.y_arrow:
+                self._vertex_selected.y += 0.2
+            if self._arrow_picked == self.z_arrow:
+                self._vertex_selected.z += 0.2
+            self.plot()
 
     def on_mouse_up(self, event):
-        if self._vertex_on_move is not None:
-            self._vertex_on_move = None
+        if self._arrow_picked is not None:
+            self._arrow_picked = None
 
     def on_pick(self, event):
-        print("picked")
-        self._line_picked = event.artist
-        data = self._line_picked.get_data()
-        data3d = self._line_picked.get_data_3d()
-        p1, p2, p3 = data3d
+        if isinstance(event.artist, art3d.Line3DCollection) and self._vertex_selected is not None:
+            self._arrow_picked = event.artist
+            print("Arrow picked")
+        if isinstance(event.artist, art3d.Line3D) and self._vertex_selected is None:
+            self._line_picked = event.artist
+            print("Line picked")
+
+    def add_arrows(self):
+        self.x_arrow = self.ax.quiver(
+            self._vertex_selected.x, self._vertex_selected.y, self._vertex_selected.z,  # <-- starting point of vector
+            1, 0, 0,  # <-- directions of vector
+            color='red', alpha=.8, lw=1, picker=True
+        )
+        self.y_arrow = self.ax.quiver(
+            self._vertex_selected.x, self._vertex_selected.y, self._vertex_selected.z,
+            # <-- starting point of vector
+            0, 1, 0,  # <-- directions of vector
+            color='blue', alpha=.8, lw=1, picker=True
+        )
+        self.z_arrow = self.ax.quiver(
+            self._vertex_selected.x, self._vertex_selected.y, self._vertex_selected.z,
+            # <-- starting point of vector
+            0, 0, 1,  # <-- directions of vector
+            color='green', alpha=.8, lw=1, picker=True
+        )
+
+        plt.show()
