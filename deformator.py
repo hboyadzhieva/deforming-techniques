@@ -40,24 +40,17 @@ class Deformator(ABC):
         pass
 
     def plot(self):
-        plt.cla()
-        self.plot_grid()
-        self.plot_model()
-        plt.xlabel("x")
-        plt.ylabel("y")
-        plt.show()
+        pass
 
 
 def xs_ys_from_vertex_list(vertex_list):
     """ Return lists of coordinate values from a given vertex list
 
-    Parameters
-    ----------
+    Parameters:
     vertex_list: list
         list of Point2D instances
 
-    Returns
-    --------
+    Returns:
     list:
        list of x coordinates of the points
     list:
@@ -131,7 +124,6 @@ class GridDeformator2D(Deformator):
                     self._grid.control_points[r][t].y - self._grid.control_points[r][b].y)
 
     def start(self):
-        print("Started 2D Grid Deformator")
         self.fig, self.ax = plt.subplots()
         self.register_mouse_events(self.fig)
         self.plot()
@@ -157,6 +149,12 @@ class GridDeformator2D(Deformator):
             xs, ys = xs_ys_from_vertex_list(y_axis_line)
             self.ax.plot(xs, ys, 'k.-')
             y_axis_line.clear()
+
+    def plot(self):
+        plt.cla()
+        self.plot_grid()
+        self.plot_model()
+        plt.show()
 
     def plot_model(self):
         """Plot model with vertices positions according to 2D Grid Deformation of the Grid
@@ -187,7 +185,6 @@ class GridDeformator2D(Deformator):
         point_clicked = Point2D(x, y)
         for control_point in self._grid.flat_control_points():
             if calc.distance_2d(point_clicked, control_point) < self._offset_mouse_touch:
-                print("clicked")
                 self._vertex_on_move = control_point
                 break
 
@@ -263,7 +260,6 @@ class FreeFormDeformator(Deformator):
                                                        pp0, self._grid.U.to_numpy_array())
 
     def start(self):
-        print("Started Free-Form Deformator")
         self.fig = plt.figure()
         self.ax = plt.subplot(projection="3d")
         self.ax.mouse_init(rotate_btn=3)
@@ -331,7 +327,7 @@ class FreeFormDeformator(Deformator):
             self.plot()
         if self._line_picked is not None and self._vertex_selected is None:
             xclick, yclick = event.xdata, event.ydata
-            p0, p1 = np.transpose(self._line_picked.get_data_3d())[0], np.transpose(self._line_picked.get_data_3d())[1]
+            p0, p1 = np.transpose(self._line_picked.get_data_3d())[0], np.transpose(self._line_picked.get_data_3d())[2]
             pp0, pp1 = proj3d.proj_points((p0, p1), self.ax.M)
             xm, ym, zm = coords_from_click_on_line(xclick, yclick, pp0, pp1, self.ax)
             point_clicked = Point3D(xm, ym, zm)
@@ -358,10 +354,8 @@ class FreeFormDeformator(Deformator):
     def on_pick(self, event):
         if isinstance(event.artist, art3d.Line3DCollection) and self._vertex_selected is not None:
             self._arrow_picked = event.artist
-            print("Arrow picked")
         if isinstance(event.artist, art3d.Line3D) and self._vertex_selected is None:
             self._line_picked = event.artist
-            print("Line picked")
 
     def add_arrows(self):
         self.x_arrow = self.ax.quiver(
