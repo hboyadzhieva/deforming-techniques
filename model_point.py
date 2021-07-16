@@ -43,22 +43,6 @@ class ModelPoint2D(Point2D):
     def v(self, v):
         self._v = v
 
-    def right(self):
-        if self.s is not None:
-            return math.ceil(self.s)
-
-    def left(self):
-        if self.s is not None:
-            return math.ceil(self.s) - 1
-
-    def top(self):
-        if self.t is not None:
-            return math.ceil(self.t)
-
-    def bottom(self):
-        if self.t is not None:
-            return math.ceil(self.t) - 1
-
 
 class ModelPoint3D(Point3D):
     def __init__(self, x, y, z):

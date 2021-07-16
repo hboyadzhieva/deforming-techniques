@@ -1,8 +1,10 @@
+import math
 from abc import ABC
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import art3d
+from matplotlib.collections import PolyCollection, LineCollection
+from mpl_toolkits.mplot3d import art3d, axes3d
 from mpl_toolkits.mplot3d import proj3d
 
 import calculation as calc
@@ -109,19 +111,21 @@ class GridDeformator2D(Deformator):
         for model_point in self._model.vertices:
             # calculate projections of Vertex P on S and T vectors
             pp0 = np.subtract(model_point.to_numpy_array(), self._grid.center.to_numpy_array())
-            model_point.s = calc.vector_projection(pp0, self._grid.S.to_numpy_array())
-            model_point.t = calc.vector_projection(pp0, self._grid.T.to_numpy_array())
+            model_point.s = calc.scalar_projection(pp0, self._grid.S.to_numpy_array())
+            model_point.t = calc.scalar_projection(pp0, self._grid.T.to_numpy_array())
 
             # calculate bilinear interpolants of the point relevant to the
             # 4 control points that define the cell in which the vertex is positioned
-            l = model_point.left()
-            r = model_point.right()
-            t = model_point.top()
-            b = model_point.bottom()
-            model_point.h = (model_point.x - self._grid.control_points[l][b].x) / (
-                    self._grid.control_points[r][b].x - self._grid.control_points[l][b].x)
-            model_point.v = (model_point.y - self._grid.control_points[r][b].y) / (
-                    self._grid.control_points[r][t].y - self._grid.control_points[r][b].y)
+            si = (model_point.s * (self._grid.count_x_points - 1)) / np.linalg.norm(self._grid.S.to_numpy_array())
+            tj = (model_point.t * (self._grid.count_y_points - 1)) / np.linalg.norm(self._grid.T.to_numpy_array())
+            # largest integer smaller than si
+            # for points on the lower or lefter boundary, consider them part of their upper/righer cells
+            i = 0 if math.ceil(si) - 1 < 0 else math.ceil(si) - 1
+            j = 0 if math.ceil(tj) - 1 < 0 else math.ceil(tj) - 1
+            model_point.h = (model_point.x - self._grid.control_points[i][j].x) / (
+                    self._grid.control_points[i + 1][j].x - self._grid.control_points[i][j].x)
+            model_point.v = (model_point.y - self._grid.control_points[i][j].y) / (
+                    self._grid.control_points[i][j + 1].y - self._grid.control_points[i][j].y)
 
     def start(self):
         self.fig, self.ax = plt.subplots()
@@ -164,20 +168,20 @@ class GridDeformator2D(Deformator):
         ax: Axes to plot on
         """
         for model_point in self._model.vertices:
-            l = model_point.left()
-            r = model_point.right()
-            t = model_point.top()
-            b = model_point.bottom()
-            new_vertex = calc.bilinear_interpolation(self._grid.control_points[l][b].to_numpy_array(),
-                                                     self._grid.control_points[r][b].to_numpy_array(),
-                                                     self._grid.control_points[r][t].to_numpy_array(),
-                                                     self._grid.control_points[l][t].to_numpy_array(),
+            si = (model_point.s * (self._grid.count_x_points - 1)) / np.linalg.norm(self._grid.S.to_numpy_array())
+            tj = (model_point.t * (self._grid.count_y_points - 1)) / np.linalg.norm(self._grid.T.to_numpy_array())
+            i = 0 if math.ceil(si) - 1 < 0 else math.ceil(si) - 1
+            j = 0 if math.ceil(tj) - 1 < 0 else math.ceil(tj) - 1
+            new_vertex = calc.bilinear_interpolation(self._grid.control_points[i][j].to_numpy_array(),
+                                                     self._grid.control_points[i + 1][j].to_numpy_array(),
+                                                     self._grid.control_points[i + 1][j + 1].to_numpy_array(),
+                                                     self._grid.control_points[i][j + 1].to_numpy_array(),
                                                      model_point.h, model_point.v)
             model_point.x = new_vertex[0]
             model_point.y = new_vertex[1]
 
         xs, ys = xs_ys_from_vertex_list(self._model.vertices)
-        self.ax.plot(xs, ys, 'go')
+        self.ax.plot(xs, ys, 'g-')
 
     def on_mouse_down(self, event):
         x = event.xdata
@@ -268,6 +272,9 @@ class FreeFormDeformator(Deformator):
 
     def plot(self):
         plt.cla()
+        plt.xlim(self._model.min_x, self._model.max_x)
+        plt.ylim(self._model.min_y, self._model.max_y)
+        self.ax.set_zlim(self._model.min_z, self._model.max_z)
         self.plot_grid()
         self.plot_model()
         if self._vertex_selected is not None:
@@ -316,7 +323,7 @@ class FreeFormDeformator(Deformator):
             model_point.y = new_vertex[1]
             model_point.z = new_vertex[2]
         xs, ys, zs = xs_ys_zs_from_vertex_list(self._model.vertices)
-        self.ax.plot(xs, ys, zs, 'go', picker=5)
+        self.ax.plot_trisurf(xs, ys, self._model._triangles, Z=zs, shade=True, color='white')
 
     def on_mouse_down(self, event):
         # after moving the arrows, user clicks on another point from the canvas
@@ -327,7 +334,8 @@ class FreeFormDeformator(Deformator):
             self.plot()
         if self._line_picked is not None and self._vertex_selected is None:
             xclick, yclick = event.xdata, event.ydata
-            p0, p1 = np.transpose(self._line_picked.get_data_3d())[0], np.transpose(self._line_picked.get_data_3d())[2]
+            n = len(self._line_picked.get_data_3d()) - 1
+            p0, p1 = np.transpose(self._line_picked.get_data_3d())[0], np.transpose(self._line_picked.get_data_3d())[n]
             pp0, pp1 = proj3d.proj_points((p0, p1), self.ax.M)
             xm, ym, zm = coords_from_click_on_line(xclick, yclick, pp0, pp1, self.ax)
             point_clicked = Point3D(xm, ym, zm)
@@ -340,11 +348,11 @@ class FreeFormDeformator(Deformator):
     def on_mouse_motion(self, event):
         if self._arrow_picked is not None and self._vertex_selected is not None:
             if self._arrow_picked == self.x_arrow:
-                self._vertex_selected.x += 0.2
+                self._vertex_selected.x += 0.5
             if self._arrow_picked == self.y_arrow:
-                self._vertex_selected.y += 0.2
+                self._vertex_selected.y += 0.5
             if self._arrow_picked == self.z_arrow:
-                self._vertex_selected.z += 0.2
+                self._vertex_selected.z += 0.5
             self.plot()
 
     def on_mouse_up(self, event):

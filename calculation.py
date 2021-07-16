@@ -35,14 +35,14 @@ def distance_3d(vector1, vector2):
     return math.sqrt((vector2.x - vector1.x) ** 2 + (vector2.y - vector1.y) ** 2 + (vector2.z - vector1.z) ** 2)
 
 
-def vector_projection(vector, base_vector):
+def scalar_projection(vector, base_vector):
     """Calculate the projection of vector on base_vector
 
     Parameters:
     ----------
     vector: numpy.array
         vector to project
-    base_vector: numpy.array\
+    base_vector: numpy.array
         base vector projection is made on
 
     Returns:

@@ -1,6 +1,15 @@
-from point import Point2D, Point3D
+import math
+
+import numpy as np
+
+import file_reader
 from model_point import ModelPoint2D, ModelPoint3D
-from control_grid import ControlGrid2D, ControlGrid3D
+from point import Point2D, Point3D
+
+# Define constants
+MODEL_DIR = 'models/'
+SPHERE_OBJ = 'sphere.obj'
+TORUS_OBJ = 'torus.obj'
 
 
 class Model2D:
@@ -36,10 +45,21 @@ class Model2D:
     def vertices(self):
         return self._vertices
 
+    @staticmethod
+    def createCircle(radius):
+        angle_values = np.linspace(0, 2 * math.pi, 100)
+        points = []
+        for angle in angle_values:
+            x = radius * math.cos(angle)
+            y = radius * math.sin(angle)
+            points.append(Point2D(x, y))
+        return Model2D(*points)
+
 
 class Model3D:
     def __init__(self, *pts):
         self._vertices = []
+        self._triangles = []
         for point in pts:
             if not isinstance(point, Point3D):
                 raise TypeError("Expected: %s, received: %s", Point3D.__name__, type(point).__name__)
@@ -79,3 +99,34 @@ class Model3D:
     @property
     def vertices(self):
         return self._vertices
+
+    @staticmethod
+    def createCilynder(radius, height):
+        angle_values = np.linspace(0, 2 * math.pi, 20)
+        points = []
+        for z in range(0, height):
+            for angle in angle_values:
+                x = radius * math.cos(angle)
+                y = radius * math.sin(angle)
+                points.append(Point3D(x, y, z))
+        return Model3D(*points)
+
+    @staticmethod
+    def sphere():
+        vertices, triangles = file_reader.read_obj(MODEL_DIR + SPHERE_OBJ)
+        points = []
+        for vertex in vertices:
+            points.append(Point3D(vertex[0], vertex[1], vertex[2]))
+        model = Model3D(*points)
+        model._triangles = triangles
+        return model
+
+    @staticmethod
+    def torus():
+        vertices, triangles = file_reader.read_obj(MODEL_DIR + TORUS_OBJ)
+        points = []
+        for vertex in vertices:
+            points.append(Point3D(vertex[0], vertex[1], vertex[2]))
+        model = Model3D(*points)
+        model._triangles = triangles
+        return model
