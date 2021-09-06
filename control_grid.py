@@ -1,9 +1,24 @@
+"""
+Control grids that contain the objects to be deformed.
+Control grids are composed of control points.
+Control grids are defined on a coordinate system with center and base vectors.
+"""
 import numpy as np
-
 from point import Point2D, Point3D
 
 
 class ControlGrid2D:
+    """
+    Control grid in 2D space.
+    @field _count_x_points: number of control points in x direction (int)
+    @field _count_y_points: number of control points in y direction (int)
+    @field _S: base vector in x direction (point.Point2D), _T: base vector in y direction (point.Point2D)
+    @field _center: position vector representing the center of the coordinate system (point.Point2D)
+    @field _control_points: all control points composing the grid (vector[][] of point.Point2D)
+    @method init_control_points: initialize _control_points and their positions
+    @method flat_control_points: return flat 1D vector of the control points
+    """
+
     def __init__(self, count_x_points, count_y_points, center, S, T):
         self._count_x_points = count_x_points
         self._count_y_points = count_y_points
@@ -50,11 +65,15 @@ class ControlGrid2D:
         return self._control_points
 
     def init_control_points(self):
+        """
+        Given number of control points in each coordinate direction
+        and the base vectors and center of the coordinate system,
+        find the global position of each control point
+        and store the points in 2D vector _control_points.
+        """
         for i in range(0, self.count_x_points):
             buffer = []
             for j in range(0, self.count_y_points):
-                # Pij = P0 + (i/l) * S + (j/m) * T,
-                # where l and m are the number of segments obtained from the control points
                 Pij = np.add(self._center.to_numpy_array(),
                              np.add((i / (self.count_x_points - 1)) * self.S.to_numpy_array(),
                                     (j / (self.count_y_points - 1)) * self.T.to_numpy_array()))
@@ -62,6 +81,7 @@ class ControlGrid2D:
             self.control_points.append(buffer)
 
     def flat_control_points(self):
+        """Return flat one dimensional array of all control points in the grid"""
         result = []
         for i in self._control_points:
             for j in i:
@@ -70,6 +90,18 @@ class ControlGrid2D:
 
 
 class ControlGrid3D:
+    """
+       Control grid in 2D space.
+       @field _count_x_points: number of control points in x direction (int)
+       @field _count_y_points: number of control points in y direction (int)
+       @field _count_z_points: number of control points in z direction (int)
+       @field _S: base vector in x direction (point.Point3D), _T: base vector in y direction (point.Point3D)
+       @field _U: base vector in z direction (point.Point3D)
+       @field _center: position vector representing the center of the coordinate system (point.Point3D)
+       @field _control_points: all control points composing the grid (vector[][][] of point.point3D)
+       @method init_control_points: initialize _control_points and their positions
+       @method flat_control_points: return flat 1D vector of the control points
+       """
     def __init__(self, count_x_points, count_y_points, count_z_points, center, S, T, U):
         self._count_x_points = count_x_points
         self._count_y_points = count_y_points
@@ -130,13 +162,17 @@ class ControlGrid3D:
         return self._control_points
 
     def init_control_points(self):
+        """
+        Given number of control points in each coordinate direction
+        and the base vectors and center of the coordinate system,
+        find the global position of each control point
+        and store the points in 3D vector _control_points.
+        """
         for i in range(0, self.count_x_points):
             row_buffer = []
             for j in range(0, self.count_y_points):
                 col_buffer = []
                 for k in range(0, self.count_z_points):
-                    # Pij = P0 + (i/n) * S + (j/m) * T,
-                    # where n and m are the number of segments obtained from the control points
                     Pij = np.add(self._center.to_numpy_array(),
                                  np.add((i / (self.count_x_points - 1)) * self.S.to_numpy_array(),
                                         np.add((j / (self.count_y_points - 1)) * self.T.to_numpy_array(),
@@ -146,6 +182,7 @@ class ControlGrid3D:
             self.control_points.append(row_buffer)
 
     def flat_control_points(self):
+        """Return flat one dimensional array of all control points in the grid"""
         result = []
         for i in self._control_points:
             for j in i:
