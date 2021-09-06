@@ -1,5 +1,3 @@
-import math
-
 from point import Point2D, Point3D
 
 

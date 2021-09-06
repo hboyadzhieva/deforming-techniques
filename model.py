@@ -55,6 +55,18 @@ class Model2D:
             points.append(Point2D(x, y))
         return Model2D(*points)
 
+    @staticmethod
+    def createSin():
+        angle_values = np.linspace(0, 2 * math.pi, 100)
+        points = []
+        a = 4
+        k = 2
+        for angle in angle_values:
+            x = a * math.cos(k * angle) * math.cos(angle)
+            y = a * math.cos(k * angle) * math.sin(angle)
+            points.append(Point2D(x, y))
+        return Model2D(*points)
+
 
 class Model3D:
     def __init__(self, *pts):

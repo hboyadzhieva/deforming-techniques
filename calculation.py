@@ -3,6 +3,8 @@ import math
 import numpy as np
 
 
+# FIXME keep consistent comments, comment the package also
+
 def distance_2d(vector1, vector2):
     """Calculate the distance between 2 points in 2D
 

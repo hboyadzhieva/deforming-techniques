@@ -1,10 +1,6 @@
 import math
-from abc import ABC
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.collections import PolyCollection, LineCollection
-from mpl_toolkits.mplot3d import art3d, axes3d
 from mpl_toolkits.mplot3d import proj3d
 
 import calculation as calc
@@ -13,38 +9,7 @@ from model import Model2D, Model3D
 from point import Point2D, Point3D
 
 
-class Deformator(ABC):
-    def start(self):
-        pass
-
-    def register_mouse_events(self, fig):
-        fig.canvas.mpl_connect('button_press_event', self.on_mouse_down)
-        fig.canvas.mpl_connect('button_release_event', self.on_mouse_up)
-        fig.canvas.mpl_connect('motion_notify_event', self.on_mouse_motion)
-        fig.canvas.mpl_connect('pick_event', self.on_pick)
-
-    def on_mouse_down(self, event):
-        pass
-
-    def on_mouse_up(self, event):
-        pass
-
-    def on_mouse_motion(self, event):
-        pass
-
-    def on_pick(self, event):
-        pass
-
-    def plot_grid(self):
-        pass
-
-    def plot_model(self):
-        pass
-
-    def plot(self):
-        pass
-
-
+# FIXME optimize comment style and keep consistent
 def xs_ys_from_vertex_list(vertex_list):
     """ Return lists of coordinate values from a given vertex list
 
@@ -82,7 +47,7 @@ def xs_ys_zs_from_vertex_list(vertex_list):
         list(map(lambda p: p.z, vertex_list)))
 
 
-class GridDeformator2D(Deformator):
+class GridDeformator2D:
 
     def __init__(self, model, control_points_x=4, control_points_y=4, offset_grid_model=2, offset_mouse_touch=0.2):
         if not isinstance(model, Model2D):
@@ -90,8 +55,6 @@ class GridDeformator2D(Deformator):
         self._model = model
 
         # Interactor settings
-        self.ax = None
-        self.fig = None
         self._offset_mouse_touch = offset_mouse_touch
         self._vertex_on_move = None
 
@@ -114,6 +77,7 @@ class GridDeformator2D(Deformator):
             model_point.s = calc.scalar_projection(pp0, self._grid.S.to_numpy_array())
             model_point.t = calc.scalar_projection(pp0, self._grid.T.to_numpy_array())
 
+            # FIXME move these calculations to Model, have fields for cell reference
             # calculate bilinear interpolants of the point relevant to the
             # 4 control points that define the cell in which the vertex is positioned
             si = (model_point.s * (self._grid.count_x_points - 1)) / np.linalg.norm(self._grid.S.to_numpy_array())
@@ -127,12 +91,7 @@ class GridDeformator2D(Deformator):
             model_point.v = (model_point.y - self._grid.control_points[i][j].y) / (
                     self._grid.control_points[i][j + 1].y - self._grid.control_points[i][j].y)
 
-    def start(self):
-        self.fig, self.ax = plt.subplots()
-        self.register_mouse_events(self.fig)
-        self.plot()
-
-    def plot_grid(self):
+    def plot_grid(self, ax):
         """
         Plot grid for 2D Grid Deformation
         Plot lines along x-axis with control points
@@ -143,7 +102,7 @@ class GridDeformator2D(Deformator):
             for i in range(0, self._grid.count_x_points):
                 x_axis_line.append(self._grid.control_points[i][j])
             xs, ys = xs_ys_from_vertex_list(x_axis_line)
-            self.ax.plot(xs, ys, 'k.-')
+            ax.plot(xs, ys, 'k.-')
             x_axis_line.clear()
 
         for i in range(0, self._grid.count_x_points):
@@ -151,16 +110,10 @@ class GridDeformator2D(Deformator):
             for j in range(0, self._grid.count_y_points):
                 y_axis_line.append(self._grid.control_points[i][j])
             xs, ys = xs_ys_from_vertex_list(y_axis_line)
-            self.ax.plot(xs, ys, 'k.-')
+            ax.plot(xs, ys, 'k.-')
             y_axis_line.clear()
 
-    def plot(self):
-        plt.cla()
-        self.plot_grid()
-        self.plot_model()
-        plt.show()
-
-    def plot_model(self):
+    def plot_model(self, ax):
         """Plot model with vertices positions according to 2D Grid Deformation of the Grid
 
         Parameters
@@ -168,6 +121,7 @@ class GridDeformator2D(Deformator):
         ax: Axes to plot on
         """
         for model_point in self._model.vertices:
+            # FIXME use model point cell reference fields instead of calculating again
             si = (model_point.s * (self._grid.count_x_points - 1)) / np.linalg.norm(self._grid.S.to_numpy_array())
             tj = (model_point.t * (self._grid.count_y_points - 1)) / np.linalg.norm(self._grid.T.to_numpy_array())
             i = 0 if math.ceil(si) - 1 < 0 else math.ceil(si) - 1
@@ -181,7 +135,7 @@ class GridDeformator2D(Deformator):
             model_point.y = new_vertex[1]
 
         xs, ys = xs_ys_from_vertex_list(self._model.vertices)
-        self.ax.plot(xs, ys, 'g-')
+        ax.plot(xs, ys, 'g-')
 
     def on_mouse_down(self, event):
         x = event.xdata
@@ -198,7 +152,6 @@ class GridDeformator2D(Deformator):
             y = event.ydata
             self._vertex_on_move.x = x
             self._vertex_on_move.y = y
-            self.plot()
 
     def on_mouse_up(self, event):
         if self._vertex_on_move is not None:
@@ -206,6 +159,7 @@ class GridDeformator2D(Deformator):
 
 
 def coords_from_click_on_line(xd, yd, p0, p1, ax):
+    # FIXME move this to appropriate place
     """
     Given the 2D view coordinates attempt to guess a 3D coordinate.
     Use method from axes3d but pass specific vertices for the edge.
@@ -228,19 +182,22 @@ def coords_from_click_on_line(xd, yd, p0, p1, ax):
     return x, y, z
 
 
-class FreeFormDeformator(Deformator):
-    def __init__(self, model, control_points_x=3, control_points_y=3, control_points_z=3, offset_grid_model=2,
+class FreeFormDeformator():
+    # FIXME add consistent comments on class and all methods
+    def __init__(self, model, control_points_x=3, control_points_y=3, control_points_z=3, offset_grid_model=0,
                  offset_mouse_event=0.2):
+        # FIXME think about consistency with public and private properties
         if not isinstance(model, Model3D):
             raise TypeError("Type error. Expected: %s, received: %s", Model3D.__name__, type(model).__name__)
         self._model = model
 
         # Setup Interactor parameters
-        self.ax = None
         self.offset_mouse_event = offset_mouse_event
+        self.offset_grid_model = offset_grid_model
         self._vertex_selected = None
         self._line_picked = None
-        self._arrow_picked = None
+        self._original_vertex_selected = None
+        self.d = 0
 
         # Choose center, S,T,U vectors so that the grid covers completely the model and leaves a margin of "offset"
         # units around the model. Initialize control grid with given number of control points per direction.
@@ -263,25 +220,7 @@ class FreeFormDeformator(Deformator):
             model_point.u = calc.trilinear_interpolant(self._grid.S.to_numpy_array(), self._grid.T.to_numpy_array(),
                                                        pp0, self._grid.U.to_numpy_array())
 
-    def start(self):
-        self.fig = plt.figure()
-        self.ax = plt.subplot(projection="3d")
-        self.ax.mouse_init(rotate_btn=3)
-        self.register_mouse_events(self.fig)
-        self.plot()
-
-    def plot(self):
-        plt.cla()
-        plt.xlim(self._model.min_x, self._model.max_x)
-        plt.ylim(self._model.min_y, self._model.max_y)
-        self.ax.set_zlim(self._model.min_z, self._model.max_z)
-        self.plot_grid()
-        self.plot_model()
-        if self._vertex_selected is not None:
-            self.add_arrows()
-        plt.show()
-
-    def plot_grid(self):
+    def plot_grid(self, ax):
         """
         Plot grid for Free-Form Deformation
         Plot lines along x-axis with control points
@@ -295,7 +234,7 @@ class FreeFormDeformator(Deformator):
                 for i in range(0, self._grid.count_x_points):
                     x_axis_line.append(self._grid.control_points[i][j][k])
                 xs, ys, zs = xs_ys_zs_from_vertex_list(x_axis_line)
-                self.ax.plot(xs, ys, zs, 'k.-', picker=5)
+                ax.plot(xs, ys, zs, 'k.-', picker=5)
                 x_axis_line.clear()
 
         for i in range(0, self._grid.count_x_points):
@@ -304,7 +243,7 @@ class FreeFormDeformator(Deformator):
                 for j in range(0, self._grid.count_y_points):
                     y_axis_line.append(self._grid.control_points[i][j][k])
                 xs, ys, zs = xs_ys_zs_from_vertex_list(y_axis_line)
-                self.ax.plot(xs, ys, zs, 'k.-')
+                ax.plot(xs, ys, zs, 'k.-')
                 y_axis_line.clear()
 
         for i in range(0, self._grid.count_x_points):
@@ -313,75 +252,58 @@ class FreeFormDeformator(Deformator):
                 for k in range(0, self._grid.count_z_points):
                     z_axis_line.append((self._grid.control_points[i][j][k]))
                 xs, ys, zs = xs_ys_zs_from_vertex_list(z_axis_line)
-                self.ax.plot(xs, ys, zs, 'k.-')
+                ax.plot(xs, ys, zs, 'k.-')
                 z_axis_line.clear()
 
-    def plot_model(self):
+    def plot_model(self, ax):
         for model_point in self._model.vertices:
             new_vertex = calc.bezier_volume(self._grid, model_point.s, model_point.t, model_point.u)
             model_point.x = new_vertex[0]
             model_point.y = new_vertex[1]
             model_point.z = new_vertex[2]
         xs, ys, zs = xs_ys_zs_from_vertex_list(self._model.vertices)
-        self.ax.plot_trisurf(xs, ys, self._model._triangles, Z=zs, shade=True, color='white')
+        # FIXME use property for triangles
+        ax.plot_trisurf(xs, ys, self._model._triangles, Z=zs, shade=True, color='white')
 
-    def on_mouse_down(self, event):
+    def on_mouse_down(self, event, ax):
         # after moving the arrows, user clicks on another point from the canvas
-        if self._arrow_picked is None and self._vertex_selected is not None:
+        if self._vertex_selected is not None:
             self._vertex_selected = None
-            self._arrow_picked = None
+            self._original_vertex_selected = None
             self._line_picked = None
-            self.plot()
         if self._line_picked is not None and self._vertex_selected is None:
             xclick, yclick = event.xdata, event.ydata
             n = len(self._line_picked.get_data_3d()) - 1
             p0, p1 = np.transpose(self._line_picked.get_data_3d())[0], np.transpose(self._line_picked.get_data_3d())[n]
-            pp0, pp1 = proj3d.proj_points((p0, p1), self.ax.M)
-            xm, ym, zm = coords_from_click_on_line(xclick, yclick, pp0, pp1, self.ax)
+            pp0, pp1 = proj3d.proj_points((p0, p1), ax.M)
+            xm, ym, zm = coords_from_click_on_line(xclick, yclick, pp0, pp1, ax)
             point_clicked = Point3D(xm, ym, zm)
             for control_point in self._grid.flat_control_points():
                 if calc.distance_3d(point_clicked, control_point) < self.offset_mouse_event:
                     self._vertex_selected = control_point
-                    self.add_arrows()
+                    self._original_vertex_selected = Point3D(control_point.x, control_point.y, control_point.z)
                     break
 
-    def on_mouse_motion(self, event):
-        if self._arrow_picked is not None and self._vertex_selected is not None:
-            if self._arrow_picked == self.x_arrow:
-                self._vertex_selected.x += 0.5
-            if self._arrow_picked == self.y_arrow:
-                self._vertex_selected.y += 0.5
-            if self._arrow_picked == self.z_arrow:
-                self._vertex_selected.z += 0.5
-            self.plot()
-
-    def on_mouse_up(self, event):
-        if self._arrow_picked is not None:
-            self._arrow_picked = None
-
     def on_pick(self, event):
-        if isinstance(event.artist, art3d.Line3DCollection) and self._vertex_selected is not None:
-            self._arrow_picked = event.artist
-        if isinstance(event.artist, art3d.Line3D) and self._vertex_selected is None:
+        if self._vertex_selected is None:
             self._line_picked = event.artist
 
-    def add_arrows(self):
-        self.x_arrow = self.ax.quiver(
+    def add_arrows(self, ax):
+        # FIXME add arrows as field of the class in init method
+        self.x_arrow = ax.quiver(
             self._vertex_selected.x, self._vertex_selected.y, self._vertex_selected.z,  # <-- starting point of vector
             1, 0, 0,  # <-- directions of vector
             color='red', alpha=.8, lw=1, picker=True
         )
-        self.y_arrow = self.ax.quiver(
+        self.y_arrow = ax.quiver(
             self._vertex_selected.x, self._vertex_selected.y, self._vertex_selected.z,
             # <-- starting point of vector
             0, 1, 0,  # <-- directions of vector
             color='blue', alpha=.8, lw=1, picker=True
         )
-        self.z_arrow = self.ax.quiver(
+        self.z_arrow = ax.quiver(
             self._vertex_selected.x, self._vertex_selected.y, self._vertex_selected.z,
             # <-- starting point of vector
             0, 0, 1,  # <-- directions of vector
             color='green', alpha=.8, lw=1, picker=True
         )
-
-        plt.show()

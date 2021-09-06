@@ -2,6 +2,7 @@ import numpy as np
 
 
 def read_obj(filename):
+    # FIXME comment properly and see how to give credit to source
     """https://yzhong-cs.medium.com/beyond-data-scientist-3d-plots-in-python-with-examples-2a8bd7aa654b"""
     triangles = []
     vertices = []
