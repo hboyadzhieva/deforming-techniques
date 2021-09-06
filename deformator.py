@@ -257,7 +257,7 @@ class FreeFormDeformator():
 
     def plot_model(self, ax):
         for model_point in self._model.vertices:
-            new_vertex = calc.bezier_volume(self._grid, model_point.s, model_point.t, model_point.u)
+            new_vertex = calc.point_position_in_bezier_volume(self._grid, model_point.s, model_point.t, model_point.u)
             model_point.x = new_vertex[0]
             model_point.y = new_vertex[1]
             model_point.z = new_vertex[2]
