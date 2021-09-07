@@ -112,16 +112,13 @@ class Model3D:
     def vertices(self):
         return self._vertices
 
-    @staticmethod
-    def createCilynder(radius, height):
-        angle_values = np.linspace(0, 2 * math.pi, 20)
-        points = []
-        for z in range(0, height):
-            for angle in angle_values:
-                x = radius * math.cos(angle)
-                y = radius * math.sin(angle)
-                points.append(Point3D(x, y, z))
-        return Model3D(*points)
+    @property
+    def triangles(self):
+        return self._triangles
+
+    @triangles.setter
+    def triangles(self, t):
+        self._triangles = t
 
     @staticmethod
     def sphere():
@@ -130,7 +127,7 @@ class Model3D:
         for vertex in vertices:
             points.append(Point3D(vertex[0], vertex[1], vertex[2]))
         model = Model3D(*points)
-        model._triangles = triangles
+        model.triangles = triangles
         return model
 
     @staticmethod
@@ -140,5 +137,5 @@ class Model3D:
         for vertex in vertices:
             points.append(Point3D(vertex[0], vertex[1], vertex[2]))
         model = Model3D(*points)
-        model._triangles = triangles
+        model.triangles = triangles
         return model

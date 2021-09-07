@@ -107,7 +107,7 @@ def on_mouse_down_3d(event):
     global def_3d, ax_3d, x_slide, show_grid_selected
     def_3d.on_mouse_down(event, ax_3d)
     reset_sliders()
-    if def_3d._vertex_selected is not None:
+    if def_3d.vertex_selected is not None:
         ax_3d.cla()
         def_3d.add_arrows(ax_3d)
         def_3d.plot_model(ax_3d)
@@ -147,13 +147,13 @@ def change_z_pos(event):
 
 def change_vertex_position(coord_axis):
     ax_3d.cla()
-    if def_3d._vertex_selected is not None and def_3d._original_vertex_selected is not None:
+    if def_3d.vertex_selected is not None and def_3d.original_vertex_selected is not None:
         if coord_axis == 1:
-            def_3d._vertex_selected.x = def_3d._original_vertex_selected.x + dx.get()
+            def_3d.vertex_selected.x = def_3d.original_vertex_selected.x + dx.get()
         if coord_axis == 2:
-            def_3d._vertex_selected.y = def_3d._original_vertex_selected.y + dy.get()
+            def_3d.vertex_selected.y = def_3d.original_vertex_selected.y + dy.get()
         if coord_axis == 3:
-            def_3d._vertex_selected.z = def_3d._original_vertex_selected.z + dz.get()
+            def_3d.vertex_selected.z = def_3d.original_vertex_selected.z + dz.get()
         def_3d.add_arrows(ax_3d)
     def_3d.plot_model(ax_3d)
     if show_grid_selected.get() == 1:
