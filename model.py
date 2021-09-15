@@ -46,7 +46,7 @@ class Model2D:
         return self._vertices
 
     @staticmethod
-    def createCircle(radius):
+    def circle(radius):
         angle_values = np.linspace(0, 2 * math.pi, 100)
         points = []
         for angle in angle_values:
@@ -56,7 +56,7 @@ class Model2D:
         return Model2D(*points)
 
     @staticmethod
-    def createSin():
+    def flower():
         angle_values = np.linspace(0, 2 * math.pi, 100)
         points = []
         a = 4

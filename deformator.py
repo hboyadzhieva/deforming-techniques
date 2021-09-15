@@ -161,7 +161,6 @@ class FreeFormDeformator:
         self.vertex_selected = None
         self.original_vertex_selected = None
         self._line_picked = None
-        self.d = 0
         center = self._setup_grid_center()
         S, T, U = self._setup_grid_bases(center)
         self._grid = ControlGrid3D(control_points_x, control_points_y, control_points_z, center, S, T, U)
