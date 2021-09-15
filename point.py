@@ -1,7 +1,13 @@
+"""
+A point in n-dim space
+"""
 import numpy
 
 
 class Point2D:
+    """
+    Point in 2D space with x and y coordinatess
+    """
     def __init__(self, x, y):
         self._x = x
         self._y = y
@@ -27,6 +33,9 @@ class Point2D:
 
 
 class Point3D:
+    """
+    Point in 3D space with x, y and z coordinatess
+    """
     def __init__(self, x, y, z):
         self._x = x
         self._y = y

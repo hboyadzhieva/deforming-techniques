@@ -1,18 +1,25 @@
+"""
+Contains classes that reprsent the models that are subject to deformation
+"""
 import math
 
 import numpy as np
 
 import file_reader
+import constants as cnt
 from model_point import ModelPoint2D, ModelPoint3D
 from point import Point2D, Point3D
 
-# Define constants
-MODEL_DIR = 'models/'
-SPHERE_OBJ = 'sphere.obj'
-TORUS_OBJ = 'torus.obj'
-
 
 class Model2D:
+    """
+    Model in 2D space
+    @fields _min_x, _min_y: represent the minimum coordinates of vertices from the model
+    @fields _max_x, _max_y: represent the maximum coordinates of vertices from the model
+    @field _vertices: a list of all vertices (model_point.ModelPoint2D) that comprise the model
+    @method circle: create a circle (Model2D)
+    @method flower: create a flower (Model2D)
+    """
     def __init__(self, *pts):
         self._vertices = []
         for point in pts:
@@ -47,6 +54,12 @@ class Model2D:
 
     @staticmethod
     def circle(radius):
+        """
+        Populate model with vertices on a circle.
+
+        :param radius: the radius of the circle
+        :return: circle model (Model2D)
+        """
         angle_values = np.linspace(0, 2 * math.pi, 100)
         points = []
         for angle in angle_values:
@@ -57,6 +70,11 @@ class Model2D:
 
     @staticmethod
     def flower():
+        """
+        Populate model with vertices on a flower.
+
+        :return: flower model (Model2D)
+        """
         angle_values = np.linspace(0, 2 * math.pi, 100)
         points = []
         a = 4
@@ -69,6 +87,15 @@ class Model2D:
 
 
 class Model3D:
+    """
+    Model in 3D space
+    @fields _min_x, _min_y, _min_z: represent the minimum coordinates of vertices from the model
+    @fields _max_x, _max_y, _max_z: represent the maximum coordinates of vertices from the model
+    @field _vertices: a list of all vertices (model_point.ModelPoint3D) that comprise the model
+    @field _triangles: a list of all faces of the model, a face is a list of 3 verticess
+    @method sphere: create a sphere (Model3D)
+    @method torus: create a torus (Model3D)
+    """
     def __init__(self, *pts):
         self._vertices = []
         self._triangles = []
@@ -122,7 +149,12 @@ class Model3D:
 
     @staticmethod
     def sphere():
-        vertices, triangles = file_reader.read_obj(MODEL_DIR + SPHERE_OBJ)
+        """
+        Populate model with vertices and triangles from file sphere.obj
+
+        :return: sphere model (Model3D)
+        """
+        vertices, triangles = file_reader.read_obj(cnt.MODEL_DIR + cnt.SPHERE_OBJ)
         points = []
         for vertex in vertices:
             points.append(Point3D(vertex[0], vertex[1], vertex[2]))
@@ -132,7 +164,12 @@ class Model3D:
 
     @staticmethod
     def torus():
-        vertices, triangles = file_reader.read_obj(MODEL_DIR + TORUS_OBJ)
+        """
+        Populate model with vertices and triangles from file torus.obj
+
+        :return: torus model (Model3D)
+        """
+        vertices, triangles = file_reader.read_obj(cnt.MODEL_DIR + cnt.TORUS_OBJ)
         points = []
         for vertex in vertices:
             points.append(Point3D(vertex[0], vertex[1], vertex[2]))
