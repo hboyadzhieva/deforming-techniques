@@ -123,7 +123,8 @@ class MainApplication:
             model = Model2D.flower()
         self.gd2d = GridDeformator2D(model)
         self.gd2d.plot_model(self.ax_2d)
-        self.gd2d.plot_grid(self.ax_2d)
+        if self.check_show_grid_value.get() == 1:
+            self.gd2d.plot_grid(self.ax_2d)
         plt.show()
 
     def display_3d(self, model_choice):
@@ -194,7 +195,8 @@ class MainApplication:
         self.gd2d.on_mouse_motion(event)
         self.ax_2d.cla()
         self.gd2d.plot_model(self.ax_2d)
-        self.gd2d.plot_grid(self.ax_2d)
+        if self.check_show_grid_value.get() == 1:
+            self.gd2d.plot_grid(self.ax_2d)
         self.figure_2d.canvas.draw()
         plt.show()
 
